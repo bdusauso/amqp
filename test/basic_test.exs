@@ -98,9 +98,9 @@ defmodule BasicTest do
       spawn fn -> assert {:error, :closing} = Basic.cancel(meta[:chan], consumer_tag) end
     end
 
-    test "receives {:DOWN, _, _, _} message when queue does not exist", meta do
+    test "receives :receiver_down message when queue does not exist", meta do
       catch_exit(Basic.consume(meta[:chan], "non-existent-queue"))
-      assert_receive {:DOWN, _, _, _, _}
+      assert_receive {:receiver_down, _reason}
     end
   end
 end

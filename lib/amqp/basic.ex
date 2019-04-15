@@ -5,6 +5,7 @@ defmodule AMQP.Basic do
 
   import AMQP.Core
   alias AMQP.{Channel, Utils}
+  alias AMQP.Channel.ReceiverManager
 
   @type error :: {:error, reason :: :blocked | :closing}
 
@@ -263,7 +264,9 @@ defmodule AMQP.Basic do
       Process.monitor(chan.pid)
       do_start_consumer(chan, consumer_pid)
     end
+    # receiver = ReceiverManager.get_receiver(chan.pid, consumer_pid)
 
+    # case :amqp_channel.subscribe(chan.pid, basic_consume, receiver.pid) do
     case :amqp_channel.subscribe(chan.pid, basic_consume, adapter_pid) do
       basic_consume_ok(consumer_tag: consumer_tag) -> {:ok, consumer_tag}
       error -> {:error, error}
@@ -328,8 +331,9 @@ defmodule AMQP.Basic do
         send consumer_pid, {:basic_cancel_ok, %{consumer_tag: consumer_tag}}
       basic_cancel(consumer_tag: consumer_tag, nowait: no_wait) ->
         send consumer_pid, {:basic_cancel, %{consumer_tag: consumer_tag, no_wait: no_wait}}
-      {:DOWN, _ref, :process, ^consumer_pid, reason} ->
-        cancel(chan, consumer_tag)
+      {:DOWN, ref, :process, ^consumer_pid, reason} ->
+        IO.inspect {ref, reason}
+        # cancel(chan, consumer_tag)
         exit(reason)
       {:DOWN, _ref, :process, _pid, reason} ->
         exit(reason)
